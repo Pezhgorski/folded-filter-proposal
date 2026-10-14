@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Гънки въвъв ватата за филтри</title>
+<meta name="description" content="Автоматично откриване на гънки във вата за филтри с фотометрично стерео: резултати от тестовото парче и предложение за следващата фаза.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #e6ebea;
+  --surface: #f4f6f5;
+  --ink: #172124;
+  --muted: #536267;
+  --line: #c3cdcc;
+  --lamp: #f2a516;
+  --crease: #b4231a;
+  --table: #000;
+  --measure: 40rem;
+  --wide: 68rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #151c1e;
+    --surface: #1d2629;
+    --ink: #e3e9e8;
+    --muted: #9aa8ac;
+    --line: #34413f;
+    --crease: #e2584c;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 1.0625rem/1.6 "Golos Text", system-ui, sans-serif;
+  font-feature-settings: "kern";
+}
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; text-underline-offset: 0.18em; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--lamp); outline-offset: 3px; }
+
+.wrap { max-width: var(--wide); margin: 0 auto; padding: 0 1rem; }
+.text { max-width: var(--measure); }
+
+h1, h2, h3 { line-height: 1.15; margin: 0; font-weight: 600; letter-spacing: -0.015em; }
+h1 { font-size: clamp(2.1rem, 5.4vw, 3.6rem); letter-spacing: -0.03em; max-width: 15ch; }
+h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 1rem; }
+h3 { font-size: 1.125rem; margin-bottom: 0.35rem; letter-spacing: 0; }
+p { margin: 0 0 1rem; }
+.lede { font-size: 1.2rem; line-height: 1.5; color: var(--muted); margin-top: 1.25rem; }
+
+header { padding: clamp(2.5rem, 7vw, 5rem) 0 2rem; }
+section { padding: clamp(2.5rem, 6vw, 4.5rem) 0; border-top: 1px solid var(--line); }
+
+/* the bench: black table under a fixed camera, lamps around the patch */
+.bench {
+  display: grid;
+  grid-template-columns: minmax(0, 44rem) 17rem;
+  gap: 2rem;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+.stage {
+  position: relative;
+  background: var(--table);
+  padding: clamp(2.25rem, 6vw, 3.5rem);
+  border-radius: 4px;
+}
+.frame { position: relative; aspect-ratio: 916 / 790; }
+.frame img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0; transition: opacity 0.35s ease;
+}
+.frame img.on { opacity: 1; }
+.lampbtn {
+  position: absolute;
+  width: 1.6rem; height: 1.6rem;
+  border-radius: 50%;
+  border: 2px solid var(--lamp);
+  background: transparent;
+  padding: 0; cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.lampbtn[aria-pressed="true"] { background: var(--lamp); box-shadow: 0 0 0 6px rgba(242,165,22,.25), 0 0 28px 8px rgba(242,165,22,.55); }
+.lampbtn:disabled { border-style: dashed; border-color: #6b6b6b; cursor: default; }
+.l-right  { right: clamp(0.3rem, 1.6vw, 0.95rem); top: 50%; transform: translateY(-50%); }
+.l-left   { left: clamp(0.3rem, 1.6vw, 0.95rem);  top: 50%; transform: translateY(-50%); }
+.l-top    { top: clamp(0.3rem, 1.6vw, 0.95rem);   left: 50%; transform: translateX(-50%); }
+.l-bottom { bottom: clamp(0.3rem, 1.6vw, 0.95rem); left: 50%; transform: translateX(-50%); }
+
+.controls h3 { margin-top: 0; }
+.seg { display: flex; flex-direction: column; gap: 0.35rem; margin: 0.6rem 0 1.4rem; }
+.seg button {
+  font: inherit; font-size: 1rem; text-align: left;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--line); border-radius: 4px;
+  background: var(--surface); color: var(--ink); cursor: pointer;
+}
+.seg button[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 3px 0 0 var(--ink); font-weight: 500; }
+.seg small { display: block; color: var(--muted); font-size: 0.85rem; }
+.readout { min-height: 7.5rem; }
+.readout p { color: var(--muted); font-size: 0.97rem; }
+.scale { height: 0.6rem; border-radius: 2px; margin: 0.25rem 0 0.25rem; }
+.scale.turbo { background: linear-gradient(90deg,#30123b,#4686fb,#1be5b5,#a4fc3c,#fbb938,#e4460a,#7a0403); }
+.scale.bone { background: linear-gradient(90deg,#000,#545474,#a7c7c7,#fff); }
+.scale-ends { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); }
+
+/* figures */
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 1.75rem 0; }
+.trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.75rem 0; }
+figure { margin: 0; }
+figure img { background: var(--table); border-radius: 3px; }
+figcaption { font-size: 0.92rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.45; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2.5rem; }
+.steps { list-style: none; padding: 0; margin: 1.5rem 0 0; counter-reset: s; display: grid; gap: 1.6rem; }
+.steps > li { counter-increment: s; display: grid; grid-template-columns: 2.4rem 1fr; gap: 0 0.75rem; }
+.steps > li::before {
+  content: counter(s);
+  grid-row: span 3;
+  width: 2.1rem; height: 2.1rem; border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  display: grid; place-items: center;
+  font-weight: 600; font-size: 0.95rem;
+}
+.steps > li > * { grid-column: 2; }
+.steps p { margin: 0; color: var(--muted); }
+.steps h3 { margin-top: 0.3rem; }
+.steps .why { margin-bottom: 0.4rem; }
+.steps .why { color: var(--ink); }
+
+.limits { list-style: none; padding: 0; margin: 0; }
+.limits li { padding: 0.8rem 0; border-bottom: 1px solid var(--line); }
+.limits li:first-child { padding-top: 0; }
+.limits strong { font-weight: 500; }
+
+.setup-list { padding-left: 1.1rem; margin: 0; }
+.setup-list li { margin-bottom: 0.6rem; }
+
+.outcome {
+  margin-top: 2.5rem; padding: 1.5rem 1.6rem;
+  background: var(--surface); border-left: 4px solid var(--lamp); border-radius: 0 4px 4px 0;
+  max-width: var(--measure);
+}
+.outcome p:last-child { margin-bottom: 0; }
+
+.contact { padding-bottom: 4rem; }
+.contact .name { font-size: 1.35rem; font-weight: 600; margin: 0; }
+.contact a { font-size: 1.15rem; }
+footer { padding: 1.5rem 0 2.5rem; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); }
+
+@media (max-width: 860px) {
+  .bench { grid-template-columns: 1fr; gap: 1.25rem; }
+  .seg { flex-direction: row; flex-wrap: wrap; }
+  .seg button { flex: 1 1 8rem; }
+  .readout { min-height: 0; }
+  .cols { grid-template-columns: 1fr; gap: 1.75rem; }
+}
+@media (max-width: 560px) {
+  .pair, .trio { grid-template-columns: 1fr; }
+  .lampbtn { width: 1.3rem; height: 1.3rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .frame img, .lampbtn { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="wrap">
+  <h1>Автоматично откриване на гънки във вата за филтри</h1>
+  <p class="lede text">Едно и също парче вата се снима неподвижно няколко пъти, всеки път с лампа от различна страна. От разликите в яркостта софтуерът изчислява релефа на повърхността и показва гънките като линии, независимо от посоката им.</p>
+</div>
+</header>
+
+<main>
+<div class="wrap">
+  <div class="bench" id="bench">
+    <div class="stage">
+      <div class="frame">
+        <img src="img/2-photo1.jpg" data-view="photo1" class="on" alt="Парчето вата, осветено с лампа отдясно" width="916" height="790">
+        <img src="img/2-photo2.jpg" data-view="photo2" alt="Парчето вата, осветено с лампа отгоре" width="916" height="790">
+        <img src="img/2-photo3.jpg" data-view="photo3" alt="Парчето вата, осветено с лампа отляво" width="916" height="790">
+        <img src="img/2-curvature.jpg" data-view="curvature" alt="Карта на кривината: гънката е вертикална червена линия вляво от средата" width="916" height="790">
+        <img src="img/2-albedo.jpg" data-view="albedo" alt="Карта на плътността: гънката е тъмна вертикална ивица" width="916" height="790">
+        <img src="img/2-height_heatmap.jpg" data-view="height" alt="Карта на височината: синьо е ниско, червено е високо" width="916" height="790">
+      </div>
+      <button class="lampbtn l-right" data-view="photo1" aria-pressed="true" aria-label="Снимка с лампа отдясно" title="Лампа отдясно"></button>
+      <button class="lampbtn l-top" data-view="photo2" aria-pressed="false" aria-label="Снимка с лампа отгоре" title="Лампа отгоре"></button>
+      <button class="lampbtn l-left" data-view="photo3" aria-pressed="false" aria-label="Снимка с лампа отляво" title="Лампа отляво"></button>
+      <button class="lampbtn l-bottom" disabled aria-label="Лампа отдолу, добавя се в следващата фаза" title="Лампа отдолу: добавя се в следващата фаза"></button>
+    </div>
+
+    <div class="controls">
+      <h3>Входни снимки</h3>
+      <p style="color:var(--muted);font-size:.97rem;margin:0">Натиснете лампа около парчето, за да видите снимката с нея.</p>
+      <h3 style="margin-top:1.4rem">Изчислени карти</h3>
+      <div class="seg" role="group" aria-label="Изчислени карти">
+        <button data-view="curvature" aria-pressed="false">Кривина<small>гънките като линии</small></button>
+        <button data-view="albedo" aria-pressed="false">Плътност<small>по-тънките места</small></button>
+        <button data-view="height" aria-pressed="false">Височина<small>общият релеф</small></button>
+      </div>
+      <div class="readout" id="readout" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="cols">
+      <div class="text">
+        <h2>Защо не стига една лампа</h2>
+        <p>Първият опит беше с една лампа отстрани, за да хвърлят гънките сянка. Това не работи надеждно:</p>
+        <ul>
+          <li>сянката от гънка се бърка с естествените по-тъмни „облаци“ в плътността на ватата;</li>
+          <li>лампата осветява неравномерно и единият край на парчето винаги е по-светъл;</li>
+          <li>гънка, успоредна на светлината, почти не хвърля сянка.</li>
+        </ul>
+      </div>
+      <div class="text">
+        <h2>Какво прави фотометричното стерео</h2>
+        <p>За всяка точка се сравнява колко е светла при осветяване от различните посоки. Наклонена към лампата точка е по-светла, обърнатата обратно е по-тъмна. Така във всяка точка се изчислява наклонът на повърхността отделно от цвета и плътността на материала.</p>
+        <p>От наклоните се получават три карти: кривина (гънките се виждат като линии), височина (релефът) и плътност (по-тънките места са по-тъмни, защото през тях прозира черната маса). Посоките на лампата се определят автоматично от снимките.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="text">
+      <h2>Резултати от тестовото парче</h2>
+      <p>Парчето има една вертикална гънка, вляво от средата. Снимано е два пъти, с лампа отдясно, отгоре и отляво, с камера на телефон, фиксирана над масата.</p>
+    </div>
+
+    <div class="trio">
+      <figure>
+        <img src="img/2-curvature.jpg" alt="Карта на кривината от първото снимане" width="916" height="790" loading="lazy">
+        <figcaption><strong>Кривина.</strong> Гънката е червената вертикална линия. Най-силното петно върху нея е и най-дълбокото място.</figcaption>
+      </figure>
+      <figure>
+        <img src="img/2-albedo.jpg" alt="Карта на плътността от първото снимане" width="916" height="790" loading="lazy">
+        <figcaption><strong>Плътност.</strong> Същата линия е тъмна ивица: в гънката ватата е по-тънка.</figcaption>
+      </figure>
+      <figure>
+        <img src="img/2-height_heatmap.jpg" alt="Карта на височината от първото снимане" width="916" height="790" loading="lazy">
+        <figcaption><strong>Височина.</strong> Общият релеф без голямото извиване на парчето. Височините са относителни, не в милиметри.</figcaption>
+      </figure>
+    </div>
+
+    <div class="text">
+      <h3>Повторно снимане на същото парче</h3>
+      <p>Парчето е снимано втори път, в малко по-различно положение. Гънката излиза на същото място и в двете карти на кривината, т.е. резултатът не е случаен шум от едно снимане.</p>
+    </div>
+    <div class="pair">
+      <figure>
+        <img src="img/2-curvature.jpg" alt="Кривина, първо снимане" width="916" height="790" loading="lazy">
+        <figcaption>Първо снимане</figcaption>
+      </figure>
+      <figure>
+        <img src="img/3-curvature.jpg" alt="Кривина, второ снимане" width="906" height="786" loading="lazy">
+        <figcaption>Второ снимане</figcaption>
+      </figure>
+    </div>
+
+    <div class="cols" style="margin-top:2.5rem">
+      <div class="text">
+        <h3>Какво още не знаем</h3>
+        <ul class="limits">
+          <li><strong>Колко дълбока е гънката в милиметри.</strong> Оценката е 0,2–0,35&nbsp;mm, но вероятно е около 2 пъти по-малка от истинската: телефонът записва JPEG с нелинейна яркост, а ъгълът на лампата и мащабът са само предположения.</li>
+          <li><strong>Как изглежда добро парче.</strong> Досега е снимано само едно парче с гънка. Без парчета без гънки не може да се избере праг между „добро“ и „лошо“.</li>
+          <li><strong>Дали някоя снимка е сбъркана.</strong> С три лампи уравненията винаги се решават точно и грешка не се вижда. Четвъртата лампа дава проверка.</li>
+        </ul>
+      </div>
+      <div class="text">
+        <h3>Тестовата постановка</h3>
+        <ul class="setup-list">
+            <li>камерата е неподвижно над масата, с фиксирани експозиция, фокус и баланс на бялото;</li>
+            <li>една лампа под нисък ъгъл, около 20° над масата, в тъмна стая;</li>
+            <li>при 45° гънките изчезват напълно, а под 15° сенките стават твърде дълги;</li>
+            <li>парчето не се мести между снимките.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="text">
+      <h2>Предложение за следващата фаза</h2>
+      <p>Целта на следващата фаза е решение „добро / лошо“ за всяко парче без човек, проверено на около 10 парчета на фиксирана стойка. Преди теста със стойката са нужни четири стъпки.</p>
+    </div>
+    <ol class="steps text">
+      <li>
+        <h3>Четири позиции на лампата</h3>
+        <p class="why">Всяко парче се снима с лампа отдясно, отгоре, отляво и отдолу.</p>
+        <p>Четвъртата снимка проверява останалите: ако лампата е под грешен ъгъл, има сянка, отблясък или парчето е мръднало, остатъкът за тази снимка е много по-голям от другите. Софтуерът вече го отпечатва.</p>
+      </li>
+      <li>
+        <h3>Калибриране в милиметри</h3>
+        <p class="why">До ватата се слага предмет с точно известна височина, например пластинка от 1&nbsp;mm, а снимките са в RAW или с корекция на гамата.</p>
+        <p>Така ъгълът на лампата, мащабът и нелинейността на камерата се калибрират наведнъж и „дълбока гънка“ може да се определи в милиметри.</p>
+      </li>
+      <li>
+        <h3>Добри и лоши парчета</h3>
+        <p class="why">От около 10-те парчета част са без гънки и предварително се знае кои са добри и кои лоши.</p>
+        <p>Само така се вижда как изглежда картата на кривината при добро парче и дали червената линия е гънка или нормалната структура на ватата.</p>
+      </li>
+      <li>
+        <h3>Една оценка за всяко парче</h3>
+        <p class="why">В картата на кривината се търси най-дългата свързана линия над праг. Резултатът е едно число за всяко парче.</p>
+        <p>С това число се проверява дали добрите и лошите парчета се разделят и къде е прагът. Детекторът е нарочно прост, за да не се нагласи прекалено по малкото снимки.</p>
+      </li>
+    </ol>
+    <div class="outcome">
+      <p><strong>Резултат от фазата:</strong> снимки на около 10 парчета от стойката, калибрирана дълбочина в милиметри и оценка за всяко парче, сравнена с това кои парчета са известни като добри и кои като лоши. Оттам се вижда дали методът е готов за линията и какъв праг да се използва.</p>
+    </div>
+  </div>
+</section>
+
+<section class="contact">
+  <div class="wrap">
+    <h2>Контакт</h2>
+    <p class="name">Калин Пежгорски</p>
+    <a href="mailto:k.pejgorski@gmail.com">k.pejgorski@gmail.com</a>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">Октомври 2026</div>
+</footer>
+
+<script>
+(function () {
+  var imgs = document.querySelectorAll('.frame img');
+  var buttons = document.querySelectorAll('#bench button[data-view]');
+  var readout = document.getElementById('readout');
+  var notes = {
+    photo1: '<p>Лампа отдясно, около 20° над масата. Тъмната вертикална ивица вляво от средата е гънката, но сама по себе си се бърка с „облаците“ във ватата.</p>',
+    photo2: '<p>Лампа отгоре. Гънката е успоредна на светлината и почти не се вижда. Затова една посока не стига.</p>',
+    photo3: '<p>Лампа отляво. От разликите между трите снимки се изчислява наклонът във всяка точка.</p><p>Четвъртата позиция, отдолу, се добавя в следващата фаза.</p>',
+    curvature: '<div class="scale turbo"></div><div class="scale-ends"><span>издутина</span><span>вдлъбнатина</span></div><p>Гънката е червената вертикална линия. Най-силното петно върху нея е най-дълбокото място.</p>',
+    albedo: '<div class="scale bone"></div><div class="scale-ends"><span>по-тънко</span><span>по-плътно</span></div><p>В гънката ватата е по-тънка и през нея прозира черната маса.</p>',
+    height: '<div class="scale turbo"></div><div class="scale-ends"><span>ниско</span><span>високо</span></div><p>Относителен релеф, без голямото извиване на парчето. Не е в милиметри, докато не се калибрира.</p>'
+  };
+  function show(view) {
+    imgs.forEach(function (im) { im.classList.toggle('on', im.dataset.view === view); });
+    buttons.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.view === view ? 'true' : 'false'); });
+    readout.innerHTML = notes[view];
+  }
+  var timers = [];
+  function stopIntro() { timers.forEach(clearTimeout); timers = []; }
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () { stopIntro(); show(b.dataset.view); });
+  });
+  show('photo1');
+  // one pass through the lamps, then the crease map: the whole idea in five seconds
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    ['photo2', 'photo3', 'curvature'].forEach(function (v, i) {
+      timers.push(setTimeout(function () { show(v); }, 1400 * (i + 1)));
+    });
+  }
+})();
+</script>
+</body>
+</html>
